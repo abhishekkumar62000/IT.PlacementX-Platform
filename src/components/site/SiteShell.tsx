@@ -198,6 +198,49 @@ function MobileAuthSection({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ─── Compact Top-Bar Mobile Auth Button ───────────────────────────────────────
+// Shows between Logo and Hamburger on small screens
+function MobileNavAuthButton() {
+  const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
+
+  if (!currentUser) {
+    return (
+      <Link
+        to="/login"
+        className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-500 px-3.5 py-1.5 text-[9px] font-black uppercase tracking-[0.12em] text-[#060b13] shadow-[0_0_12px_-3px_rgba(249,115,22,0.6)] hover:scale-105 active:scale-95 transition-all"
+      >
+        Login <ArrowRight className="h-2.5 w-2.5 stroke-[3px]" />
+      </Link>
+    );
+  }
+
+  // Logged in — show avatar circle with initials
+  const initials = currentUser.name
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  const roleBadgeClass = getRoleColor(currentUser.role);
+
+  return (
+    <button
+      onClick={() => navigate({ to: getRoleDashboard(currentUser.role) })}
+      className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 pl-1 pr-2.5 py-1 hover:bg-white/10 transition-all cursor-pointer"
+      title={`${currentUser.name} · ${currentUser.role}`}
+    >
+      <div className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-orange-500 to-emerald-500 text-[10px] font-black text-white shadow-[0_0_10px_-2px_rgba(249,115,22,0.5)]">
+        {initials}
+      </div>
+      <span className={`text-[8px] font-black tracking-wider uppercase px-1.5 py-0.5 rounded-full border ${roleBadgeClass}`}>
+        {currentUser.role}
+      </span>
+    </button>
+  );
+}
+
 export function Navbar() {
   const [open, setOpen] = useState(false);
   return (
@@ -268,13 +311,17 @@ export function Navbar() {
           <NavAuthButton />
         </div>
         
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="lg:hidden relative z-50 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-white"
-          aria-label="Toggle menu"
-        >
-          {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-        </button>
+        {/* Mobile right-side controls: Login/Profile + Hamburger */}
+        <div className="lg:hidden flex items-center gap-2 relative z-50">
+          <MobileNavAuthButton />
+          <button
+            onClick={() => setOpen((v) => !v)}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-white"
+            aria-label="Toggle menu"
+          >
+            {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu Overlay */}
