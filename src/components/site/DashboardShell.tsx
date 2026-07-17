@@ -7,14 +7,14 @@ import { toast } from "sonner";
 
 export function DashboardShell({ title, subtitle, children, sidebar }: { title: string; subtitle?: string; children: ReactNode; sidebar?: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { userProfile, logout } = useAuth();
+  const { appUser, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
       await logout();
       toast.success("Logged out successfully.");
-      navigate({ to: "/login" });
+      navigate({ to: "/" });
     } catch (e: any) {
       toast.error("Error logging out.");
     }
@@ -22,9 +22,9 @@ export function DashboardShell({ title, subtitle, children, sidebar }: { title: 
 
   // Define role based routes switcher
   const getRolesForHeader = () => {
-    if (!userProfile) return [];
+    if (!appUser) return [];
     
-    if (userProfile.role === "admin") {
+    if (appUser.role === "admin") {
       return [
         { to: "/student/dashboard", label: "Student View", icon: GraduationCap },
         { to: "/trainer/dashboard", label: "Trainer View", icon: Users },
@@ -32,7 +32,7 @@ export function DashboardShell({ title, subtitle, children, sidebar }: { title: 
       ];
     }
     
-    if (userProfile.role === "trainer") {
+    if (appUser.role === "trainer") {
       return [
         { to: "/trainer/dashboard", label: "Trainer Console", icon: Users }
       ];
@@ -44,8 +44,8 @@ export function DashboardShell({ title, subtitle, children, sidebar }: { title: 
   };
 
   const headerRoles = getRolesForHeader();
-  const initials = userProfile?.name
-    ? userProfile.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+  const initials = appUser?.fullName
+    ? appUser.fullName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "U";
 
   return (
@@ -69,8 +69,8 @@ export function DashboardShell({ title, subtitle, children, sidebar }: { title: 
                 {initials}
               </div>
               <div className="hidden sm:flex flex-col text-left">
-                <span className="text-xs font-medium leading-none text-foreground">{userProfile?.name || "Loading..."}</span>
-                <span className="text-[10px] text-muted-foreground capitalize leading-none mt-1">{userProfile?.role || "User"}</span>
+                <span className="text-xs font-medium leading-none text-foreground">{appUser?.fullName || "Loading..."}</span>
+                <span className="text-[10px] text-muted-foreground capitalize leading-none mt-1">{appUser?.role || "User"}</span>
               </div>
               <button 
                 onClick={handleLogout}

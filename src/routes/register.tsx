@@ -40,7 +40,7 @@ function Register() {
   const navigate = useNavigate();
   const { signUp, loading } = useAuth();
 
-  const [name, setName] = useState("");
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -58,13 +58,19 @@ function Register() {
     e.preventDefault();
     setError("");
 
-    if (!name.trim()) return setError("Please enter your full name.");
+    if (!fullName.trim()) return setError("Please enter your full name.");
     if (!email.trim()) return setError("Please enter a valid email address.");
     if (password.length < 6) return setError("Password must be at least 6 characters.");
     if (!gender) return setError("Please select your gender.");
 
     setIsSubmitting(true);
-    const result = await signUp({ name: name.trim(), email: email.trim(), password, role, gender: gender as UserGender });
+    const result = await signUp({
+      fullName: fullName.trim(),
+      email: email.trim(),
+      password,
+      role,
+      gender: gender as UserGender,
+    });
     setIsSubmitting(false);
 
     if (result.success) {
@@ -74,29 +80,17 @@ function Register() {
     }
   }
 
-  const roleColorMap: Record<string, string> = {
-    emerald: "border-emerald-500/50 bg-emerald-500/10 text-emerald-400 ring-emerald-500/20",
-    blue: "border-blue-500/50 bg-blue-500/10 text-blue-400 ring-blue-500/20",
-    amber: "border-amber-500/50 bg-amber-500/10 text-amber-400 ring-amber-500/20",
-  };
-
   return (
     <div className="relative min-h-screen flex bg-[#03060a] overflow-hidden">
-      {/* Animated background grid */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
 
-      {/* === LEFT PANEL === */}
+      {/* LEFT PANEL */}
       <div className="hidden lg:flex lg:w-[46%] relative flex-col justify-between p-12 overflow-hidden">
-        {/* Gradient background */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#0e0c2e] via-[#12123a] to-[#0a1628]" />
         <div className="absolute inset-0 bg-gradient-to-tr from-orange-500/10 via-transparent to-emerald-500/10" />
-
-        {/* Animated orbs */}
         <div className="absolute top-1/4 left-1/3 w-72 h-72 bg-orange-500/20 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-56 h-56 bg-emerald-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
-        <div className="absolute top-1/2 left-1/2 w-40 h-40 bg-blue-500/15 rounded-full blur-2xl animate-pulse" style={{ animationDelay: "2s" }} />
 
-        {/* Logo at top */}
         <div className="relative z-10 flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl border border-white/10 bg-white p-1 shadow-lg">
             <img src="/our-logo.jpeg" alt="ITPlacementX" className="h-full w-full rounded-lg object-contain" />
@@ -109,19 +103,15 @@ function Register() {
           </div>
         </div>
 
-        {/* Center illustration area */}
         <div className="relative z-10 flex flex-col items-center text-center my-auto">
-          {/* Abstract animated dashboard mockup */}
           <div className="relative w-72 h-56 mb-8">
             <div className="absolute inset-0 rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-4">
-              {/* Mock top bar */}
               <div className="flex items-center gap-1.5 mb-3">
                 <div className="h-2.5 w-2.5 rounded-full bg-red-400/80" />
                 <div className="h-2.5 w-2.5 rounded-full bg-yellow-400/80" />
                 <div className="h-2.5 w-2.5 rounded-full bg-green-400/80" />
                 <div className="ml-auto flex h-5 items-center rounded bg-white/5 px-2 text-[8px] text-white/30">dashboard.itplacementx.com</div>
               </div>
-              {/* Mock stats */}
               <div className="grid grid-cols-3 gap-2 mb-3">
                 {[
                   { l: "ATS Score", v: "92%", c: "text-emerald-400" },
@@ -134,7 +124,6 @@ function Register() {
                   </div>
                 ))}
               </div>
-              {/* Mock sparkline */}
               <div className="rounded-lg border border-white/5 bg-white/5 p-2">
                 <div className="text-[8px] font-bold text-white/50 mb-1.5">Career Growth Trajectory</div>
                 <svg viewBox="0 0 200 30" className="w-full h-6">
@@ -158,7 +147,6 @@ function Register() {
             Get AI-powered mentorship, live training from FAANG engineers, and guaranteed placement assistance.
           </p>
 
-          {/* Feature bullets */}
           <div className="mt-8 w-full max-w-xs space-y-3">
             {LEFT_FEATURES.map(({ icon: Icon, text }) => (
               <div key={text} className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/5 px-4 py-2.5">
@@ -171,13 +159,12 @@ function Register() {
           </div>
         </div>
 
-        {/* Bottom tagline */}
         <div className="relative z-10 text-center text-xs text-white/30">
           Trusted by 42,000+ learners across India
         </div>
       </div>
 
-      {/* === RIGHT PANEL — FORM === */}
+      {/* RIGHT PANEL — FORM */}
       <div className="flex flex-1 items-center justify-center px-6 py-12">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
@@ -190,7 +177,6 @@ function Register() {
             </div>
           </div>
 
-          {/* Heading */}
           <div className="mb-8">
             <h1 className="text-3xl font-black text-white">
               <span className="bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent">Create</span>{" "}
@@ -199,7 +185,6 @@ function Register() {
             <p className="mt-1 text-sm text-white/40">Start your journey to becoming industry-ready.</p>
           </div>
 
-          {/* Error Banner */}
           {error && (
             <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
               <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
@@ -208,19 +193,17 @@ function Register() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Full Name */}
             <input
               id="register-name"
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
               placeholder="Full Name"
               required
               autoComplete="name"
               className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3.5 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-orange-500/50 focus:bg-white/8 focus:ring-2 focus:ring-orange-500/20"
             />
 
-            {/* Email */}
             <input
               id="register-email"
               type="email"
@@ -232,7 +215,6 @@ function Register() {
               className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3.5 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-orange-500/50 focus:bg-white/8 focus:ring-2 focus:ring-orange-500/20"
             />
 
-            {/* Password */}
             <div className="relative">
               <input
                 id="register-password"
@@ -255,7 +237,7 @@ function Register() {
 
             {/* Role + Gender Row */}
             <div className="grid grid-cols-2 gap-3">
-              {/* Role Selector */}
+              {/* Role */}
               <div className="relative">
                 <div
                   className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-3 cursor-pointer hover:border-white/20 transition-all"
@@ -294,7 +276,7 @@ function Register() {
                 )}
               </div>
 
-              {/* Gender Selector */}
+              {/* Gender */}
               <div className="relative">
                 <div
                   className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-3 cursor-pointer hover:border-white/20 transition-all"
@@ -334,7 +316,6 @@ function Register() {
               </div>
             </div>
 
-            {/* Create Account Button */}
             <button
               id="register-submit"
               type="submit"
@@ -352,7 +333,6 @@ function Register() {
             </button>
           </form>
 
-          {/* Sign In Link */}
           <p className="mt-6 text-center text-sm text-white/40">
             Joined already?{" "}
             <Link to="/login" className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-emerald-400 hover:opacity-80 transition-opacity">

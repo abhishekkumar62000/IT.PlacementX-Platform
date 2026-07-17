@@ -56,12 +56,10 @@ function Login() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-b from-orange-500/10 via-amber-500/5 to-transparent blur-3xl rounded-full" />
       <div className="absolute bottom-0 left-1/4 w-[400px] h-[300px] bg-gradient-to-t from-emerald-500/10 to-transparent blur-3xl rounded-full" />
 
-      {/* Login Card */}
       <div className="relative w-full max-w-sm">
-        {/* Glowing border effect */}
         <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500/30 via-amber-400/20 to-emerald-500/30 rounded-3xl blur-md opacity-70" />
-
         <div className="relative rounded-3xl border border-white/10 bg-[#080d14]/90 backdrop-blur-2xl shadow-2xl p-8">
+
           {/* Logo + Brand */}
           <div className="flex flex-col items-center mb-8">
             <div className="relative mb-4">
@@ -85,21 +83,17 @@ function Login() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email */}
-            <div className="group relative">
-              <input
-                id="login-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email Address"
-                required
-                autoComplete="email"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3.5 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-orange-500/50 focus:bg-white/8 focus:ring-2 focus:ring-orange-500/20"
-              />
-            </div>
+            <input
+              id="login-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email Address"
+              required
+              autoComplete="email"
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3.5 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:border-orange-500/50 focus:bg-white/8 focus:ring-2 focus:ring-orange-500/20"
+            />
 
-            {/* Password */}
             <div className="relative">
               <input
                 id="login-password"
@@ -120,9 +114,12 @@ function Login() {
               </button>
             </div>
 
-            {/* Sign In As Role Selector */}
+            {/* Role Selector */}
             <div className="relative">
-              <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3 cursor-pointer hover:border-white/20 transition-all" onClick={() => setRoleOpen((v) => !v)}>
+              <div
+                className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3 cursor-pointer hover:border-white/20 transition-all"
+                onClick={() => setRoleOpen((v) => !v)}
+              >
                 <div>
                   <span className="text-[9px] font-black tracking-[0.18em] uppercase text-orange-400">Sign In As</span>
                   <div className="flex items-center gap-2 mt-0.5">
@@ -151,7 +148,6 @@ function Login() {
               )}
             </div>
 
-            {/* Submit Button */}
             <button
               id="login-submit"
               type="submit"
@@ -169,7 +165,6 @@ function Login() {
             </button>
           </form>
 
-          {/* Divider + Register link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-white/40">
               New here?{" "}

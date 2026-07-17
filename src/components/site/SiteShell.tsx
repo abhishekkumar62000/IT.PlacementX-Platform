@@ -39,12 +39,11 @@ export function BrandMark({ className = "" }: { className?: string }) {
 
 // ─── Auth-aware Profile / Login button ────────────────────────────────────
 function NavAuthButton() {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, appUser, logout } = useAuth();
   const navigate = useNavigate();
   const [dropOpen, setDropOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setDropOpen(false);
@@ -53,7 +52,7 @@ function NavAuthButton() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  if (!currentUser) {
+  if (!currentUser || !appUser) {
     return (
       <Link
         to="/login"
@@ -67,15 +66,15 @@ function NavAuthButton() {
     );
   }
 
-  const initials = currentUser.name
+  const initials = appUser.fullName
     .split(" ")
     .map((w) => w[0])
     .slice(0, 2)
     .join("")
     .toUpperCase();
 
-  const roleLabel = currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1);
-  const roleBadgeClass = getRoleColor(currentUser.role);
+  const roleLabel = appUser.role.charAt(0).toUpperCase() + appUser.role.slice(1);
+  const roleBadgeClass = getRoleColor(appUser.role);
 
   return (
     <div ref={ref} className="relative">
@@ -88,7 +87,7 @@ function NavAuthButton() {
           {initials}
         </div>
         <div className="hidden xl:flex flex-col items-start">
-          <span className="text-[10px] font-bold text-white leading-none truncate max-w-[80px]">{currentUser.name.split(" ")[0]}</span>
+          <span className="text-[10px] font-bold text-white leading-none truncate max-w-[80px]">{appUser.fullName.split(" ")[0]}</span>
           <span className={`text-[8px] font-black tracking-wide uppercase mt-0.5 px-1.5 py-0.5 rounded-full border ${roleBadgeClass}`}>{roleLabel}</span>
         </div>
         <ChevronDown className={`h-3 w-3 text-white/40 transition-transform duration-200 ${dropOpen ? "rotate-180" : ""}`} />
@@ -104,8 +103,8 @@ function NavAuthButton() {
                 {initials}
               </div>
               <div className="min-w-0">
-                <div className="text-sm font-bold text-white truncate">{currentUser.name}</div>
-                <div className="text-[10px] text-white/40 truncate">{currentUser.email}</div>
+                <div className="text-sm font-bold text-white truncate">{appUser.fullName}</div>
+                <div className="text-[10px] text-white/40 truncate">{appUser.email}</div>
                 <span className={`mt-1 inline-block text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-full border ${roleBadgeClass}`}>{roleLabel}</span>
               </div>
             </div>
@@ -114,14 +113,14 @@ function NavAuthButton() {
           {/* Links */}
           <div className="p-2">
             <button
-              onClick={() => { setDropOpen(false); navigate({ to: getRoleDashboard(currentUser.role) }); }}
+              onClick={() => { setDropOpen(false); navigate({ to: getRoleDashboard(appUser.role) }); }}
               className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/70 hover:bg-white/5 hover:text-white transition-all cursor-pointer"
             >
               <LayoutDashboard className="h-4 w-4 text-orange-400" />
               My Dashboard
             </button>
             <button
-              onClick={() => { setDropOpen(false); navigate({ to: "/login" }); }}
+              onClick={() => { setDropOpen(false); navigate({ to: "/trainee/profile" }); }}
               className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/70 hover:bg-white/5 hover:text-white transition-all cursor-pointer"
             >
               <User className="h-4 w-4 text-blue-400" />
@@ -147,10 +146,10 @@ function NavAuthButton() {
 
 // ─── Mobile Auth Button ─────────────────────────────────────────────────────
 function MobileAuthSection({ onClose }: { onClose: () => void }) {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, appUser, logout } = useAuth();
   const navigate = useNavigate();
 
-  if (!currentUser) {
+  if (!currentUser || !appUser) {
     return (
       <Link
         to="/login"
@@ -165,9 +164,9 @@ function MobileAuthSection({ onClose }: { onClose: () => void }) {
     );
   }
 
-  const initials = currentUser.name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
-  const roleLabel = currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1);
-  const roleBadgeClass = getRoleColor(currentUser.role);
+  const initials = appUser.fullName.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+  const roleLabel = appUser.role.charAt(0).toUpperCase() + appUser.role.slice(1);
+  const roleBadgeClass = getRoleColor(appUser.role);
 
   return (
     <div className="space-y-2">
@@ -177,13 +176,13 @@ function MobileAuthSection({ onClose }: { onClose: () => void }) {
           {initials}
         </div>
         <div className="min-w-0">
-          <div className="text-sm font-bold text-white truncate">{currentUser.name}</div>
-          <div className="text-[10px] text-white/40 truncate">{currentUser.email}</div>
+          <div className="text-sm font-bold text-white truncate">{appUser.fullName}</div>
+          <div className="text-[10px] text-white/40 truncate">{appUser.email}</div>
           <span className={`mt-1 inline-block text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-full border ${roleBadgeClass}`}>{roleLabel}</span>
         </div>
       </div>
       <button
-        onClick={() => { onClose(); navigate({ to: getRoleDashboard(currentUser.role) }); }}
+        onClick={() => { onClose(); navigate({ to: getRoleDashboard(appUser.role) }); }}
         className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 text-xs font-black uppercase tracking-widest text-white hover:bg-white/10 transition-all"
       >
         <LayoutDashboard className="h-4 w-4 text-orange-400" /> My Dashboard
@@ -201,10 +200,10 @@ function MobileAuthSection({ onClose }: { onClose: () => void }) {
 // ─── Compact Top-Bar Mobile Auth Button ───────────────────────────────────────
 // Shows between Logo and Hamburger on small screens
 function MobileNavAuthButton() {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, appUser, logout } = useAuth();
   const navigate = useNavigate();
 
-  if (!currentUser) {
+  if (!currentUser || !appUser) {
     return (
       <Link
         to="/login"
@@ -215,27 +214,26 @@ function MobileNavAuthButton() {
     );
   }
 
-  // Logged in — show avatar circle with initials
-  const initials = currentUser.name
+  const initials = appUser.fullName
     .split(" ")
     .map((w) => w[0])
     .slice(0, 2)
     .join("")
     .toUpperCase();
 
-  const roleBadgeClass = getRoleColor(currentUser.role);
+  const roleBadgeClass = getRoleColor(appUser.role);
 
   return (
     <button
-      onClick={() => navigate({ to: getRoleDashboard(currentUser.role) })}
+      onClick={() => navigate({ to: getRoleDashboard(appUser.role) })}
       className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 pl-1 pr-2.5 py-1 hover:bg-white/10 transition-all cursor-pointer"
-      title={`${currentUser.name} · ${currentUser.role}`}
+      title={`${appUser.fullName} · ${appUser.role}`}
     >
       <div className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-orange-500 to-emerald-500 text-[10px] font-black text-white shadow-[0_0_10px_-2px_rgba(249,115,22,0.5)]">
         {initials}
       </div>
       <span className={`text-[8px] font-black tracking-wider uppercase px-1.5 py-0.5 rounded-full border ${roleBadgeClass}`}>
-        {currentUser.role}
+        {appUser.role}
       </span>
     </button>
   );

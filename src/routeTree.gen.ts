@@ -34,6 +34,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MentorshipProgramIndexRouteImport } from './routes/mentorship-program/index'
 import { Route as TrainerDashboardRouteImport } from './routes/trainer.dashboard'
+import { Route as TraineeProfileRouteImport } from './routes/trainee/profile'
 import { Route as StudentDashboardRouteImport } from './routes/student.dashboard'
 import { Route as MentorshipProgramCompanyIdRouteImport } from './routes/mentorship-program/$companyId'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
@@ -166,6 +167,11 @@ const TrainerDashboardRoute = TrainerDashboardRouteImport.update({
   path: '/trainer/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TraineeProfileRoute = TraineeProfileRouteImport.update({
+  id: '/trainee/profile',
+  path: '/trainee/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StudentDashboardRoute = StudentDashboardRouteImport.update({
   id: '/student/dashboard',
   path: '/student/dashboard',
@@ -228,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/mentorship-program/$companyId': typeof MentorshipProgramCompanyIdRoute
   '/student/dashboard': typeof StudentDashboardRoute
+  '/trainee/profile': typeof TraineeProfileRoute
   '/trainer/dashboard': typeof TrainerDashboardRoute
   '/mentorship-program/': typeof MentorshipProgramIndexRoute
   '/mentorship-program/amazon/purvabh-surana': typeof MentorshipProgramAmazonPurvabhSuranaRoute
@@ -260,6 +267,7 @@ export interface FileRoutesByTo {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/mentorship-program/$companyId': typeof MentorshipProgramCompanyIdRoute
   '/student/dashboard': typeof StudentDashboardRoute
+  '/trainee/profile': typeof TraineeProfileRoute
   '/trainer/dashboard': typeof TrainerDashboardRoute
   '/mentorship-program': typeof MentorshipProgramIndexRoute
   '/mentorship-program/amazon/purvabh-surana': typeof MentorshipProgramAmazonPurvabhSuranaRoute
@@ -294,6 +302,7 @@ export interface FileRoutesById {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/mentorship-program/$companyId': typeof MentorshipProgramCompanyIdRoute
   '/student/dashboard': typeof StudentDashboardRoute
+  '/trainee/profile': typeof TraineeProfileRoute
   '/trainer/dashboard': typeof TrainerDashboardRoute
   '/mentorship-program/': typeof MentorshipProgramIndexRoute
   '/mentorship-program/amazon/purvabh-surana': typeof MentorshipProgramAmazonPurvabhSuranaRoute
@@ -329,6 +338,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/mentorship-program/$companyId'
     | '/student/dashboard'
+    | '/trainee/profile'
     | '/trainer/dashboard'
     | '/mentorship-program/'
     | '/mentorship-program/amazon/purvabh-surana'
@@ -361,6 +371,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/mentorship-program/$companyId'
     | '/student/dashboard'
+    | '/trainee/profile'
     | '/trainer/dashboard'
     | '/mentorship-program'
     | '/mentorship-program/amazon/purvabh-surana'
@@ -394,6 +405,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/mentorship-program/$companyId'
     | '/student/dashboard'
+    | '/trainee/profile'
     | '/trainer/dashboard'
     | '/mentorship-program/'
     | '/mentorship-program/amazon/purvabh-surana'
@@ -427,6 +439,7 @@ export interface RootRouteChildren {
   VerifyEmailRoute: typeof VerifyEmailRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   StudentDashboardRoute: typeof StudentDashboardRoute
+  TraineeProfileRoute: typeof TraineeProfileRoute
   TrainerDashboardRoute: typeof TrainerDashboardRoute
 }
 
@@ -607,6 +620,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TrainerDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/trainee/profile': {
+      id: '/trainee/profile'
+      path: '/trainee/profile'
+      fullPath: '/trainee/profile'
+      preLoaderRoute: typeof TraineeProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/student/dashboard': {
       id: '/student/dashboard'
       path: '/student/dashboard'
@@ -700,6 +720,7 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyEmailRoute: VerifyEmailRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   StudentDashboardRoute: StudentDashboardRoute,
+  TraineeProfileRoute: TraineeProfileRoute,
   TrainerDashboardRoute: TrainerDashboardRoute,
 }
 export const routeTree = rootRouteImport
