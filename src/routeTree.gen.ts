@@ -16,6 +16,7 @@ import { Route as SupportRouteImport } from './routes/support'
 import { Route as SuccessStoriesRouteImport } from './routes/success-stories'
 import { Route as SmartHubRouteImport } from './routes/smart-hub'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProgramsRouteImport } from './routes/programs'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
@@ -73,6 +74,11 @@ const SmartHubRoute = SmartHubRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProgramsRoute = ProgramsRouteImport.update({
@@ -211,6 +217,7 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/programs': typeof ProgramsRoute
+  '/register': typeof RegisterRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/smart-hub': typeof SmartHubRoute
   '/success-stories': typeof SuccessStoriesRoute
@@ -242,6 +249,7 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/programs': typeof ProgramsRoute
+  '/register': typeof RegisterRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/smart-hub': typeof SmartHubRoute
   '/success-stories': typeof SuccessStoriesRoute
@@ -275,6 +283,7 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/programs': typeof ProgramsRoute
+  '/register': typeof RegisterRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/smart-hub': typeof SmartHubRoute
   '/success-stories': typeof SuccessStoriesRoute
@@ -309,6 +318,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/programs'
+    | '/register'
     | '/sitemap.xml'
     | '/smart-hub'
     | '/success-stories'
@@ -340,6 +350,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/programs'
+    | '/register'
     | '/sitemap.xml'
     | '/smart-hub'
     | '/success-stories'
@@ -372,6 +383,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/programs'
+    | '/register'
     | '/sitemap.xml'
     | '/smart-hub'
     | '/success-stories'
@@ -405,6 +417,7 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   ProgramsRoute: typeof ProgramsRoute
+  RegisterRoute: typeof RegisterRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SmartHubRoute: typeof SmartHubRoute
   SuccessStoriesRoute: typeof SuccessStoriesRoute
@@ -466,6 +479,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/programs': {
@@ -670,6 +690,7 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   ProgramsRoute: ProgramsRoute,
+  RegisterRoute: RegisterRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SmartHubRoute: SmartHubRoute,
   SuccessStoriesRoute: SuccessStoriesRoute,

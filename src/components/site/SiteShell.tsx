@@ -1,6 +1,7 @@
-import { Link } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
-import { Menu, X, Sparkles, ArrowRight, Github, Linkedin, Twitter, Youtube, Activity } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useState, useRef, useEffect, type ReactNode } from "react";
+import { Menu, X, ArrowRight, Github, Linkedin, Twitter, Youtube, Activity, LogOut, ChevronDown, User, LayoutDashboard } from "lucide-react";
+import { useAuth, getRoleColor, getRoleDashboard } from "@/context/AuthContext";
 
 const navLinks = [
   { to: "/", label: "Home" },
@@ -33,6 +34,167 @@ export function BrandMark({ className = "" }: { className?: string }) {
         </span>
       </div>
     </Link>
+  );
+}
+
+// ─── Auth-aware Profile / Login button ────────────────────────────────────
+function NavAuthButton() {
+  const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
+  const [dropOpen, setDropOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setDropOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  if (!currentUser) {
+    return (
+      <Link
+        to="/login"
+        className="relative overflow-hidden inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#ff9b3f] via-[#ffba5a] to-[#10b981] px-6 py-2.5 text-[9.5px] font-black uppercase tracking-[0.2em] text-[#060b13] shadow-[0_0_15px_rgba(251,146,60,0.2)] hover:shadow-[0_0_22px_rgba(16,185,129,0.45)] hover:scale-[1.03] active:scale-95 transition-all duration-300 group"
+      >
+        <span className="absolute inset-0 w-full h-full bg-white/30 -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
+        <span className="relative z-10 flex items-center gap-1.5">
+          Login <ArrowRight className="h-3 w-3 stroke-[3px] group-hover:translate-x-1 transition-transform duration-300" />
+        </span>
+      </Link>
+    );
+  }
+
+  const initials = currentUser.name
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  const roleLabel = currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1);
+  const roleBadgeClass = getRoleColor(currentUser.role);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setDropOpen((v) => !v)}
+        className="flex items-center gap-2.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer group"
+      >
+        {/* Avatar circle */}
+        <div className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-orange-500 to-emerald-500 text-xs font-black text-white shadow-[0_0_12px_-2px_rgba(249,115,22,0.5)]">
+          {initials}
+        </div>
+        <div className="hidden xl:flex flex-col items-start">
+          <span className="text-[10px] font-bold text-white leading-none truncate max-w-[80px]">{currentUser.name.split(" ")[0]}</span>
+          <span className={`text-[8px] font-black tracking-wide uppercase mt-0.5 px-1.5 py-0.5 rounded-full border ${roleBadgeClass}`}>{roleLabel}</span>
+        </div>
+        <ChevronDown className={`h-3 w-3 text-white/40 transition-transform duration-200 ${dropOpen ? "rotate-180" : ""}`} />
+      </button>
+
+      {/* Dropdown */}
+      {dropOpen && (
+        <div className="absolute right-0 top-full mt-2 w-60 rounded-2xl border border-white/10 bg-[#0d1421]/95 backdrop-blur-2xl shadow-2xl overflow-hidden z-50">
+          {/* User info header */}
+          <div className="px-4 pt-4 pb-3 border-b border-white/5">
+            <div className="flex items-center gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-orange-500 to-emerald-500 text-sm font-black text-white">
+                {initials}
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-bold text-white truncate">{currentUser.name}</div>
+                <div className="text-[10px] text-white/40 truncate">{currentUser.email}</div>
+                <span className={`mt-1 inline-block text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-full border ${roleBadgeClass}`}>{roleLabel}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Links */}
+          <div className="p-2">
+            <button
+              onClick={() => { setDropOpen(false); navigate({ to: getRoleDashboard(currentUser.role) }); }}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/70 hover:bg-white/5 hover:text-white transition-all cursor-pointer"
+            >
+              <LayoutDashboard className="h-4 w-4 text-orange-400" />
+              My Dashboard
+            </button>
+            <button
+              onClick={() => { setDropOpen(false); navigate({ to: "/login" }); }}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/70 hover:bg-white/5 hover:text-white transition-all cursor-pointer"
+            >
+              <User className="h-4 w-4 text-blue-400" />
+              Profile Settings
+            </button>
+          </div>
+
+          {/* Logout */}
+          <div className="p-2 border-t border-white/5">
+            <button
+              onClick={() => { logout(); setDropOpen(false); navigate({ to: "/" }); }}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-all cursor-pointer"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Mobile Auth Button ─────────────────────────────────────────────────────
+function MobileAuthSection({ onClose }: { onClose: () => void }) {
+  const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
+
+  if (!currentUser) {
+    return (
+      <Link
+        to="/login"
+        onClick={onClose}
+        className="relative overflow-hidden flex items-center justify-center rounded-full bg-gradient-to-r from-[#ff9b3f] via-[#ffba5a] to-[#10b981] w-full py-4 text-center text-xs font-black uppercase tracking-[0.2em] text-[#060b13] shadow-[0_0_25px_rgba(251,146,60,0.25)] group hover:scale-[1.02] active:scale-[0.98] transition-all"
+      >
+        <span className="absolute inset-0 w-full h-full bg-white/30 -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
+        <span className="relative z-10 flex items-center gap-2">
+          Login <ArrowRight className="h-4 w-4 stroke-[3px]" />
+        </span>
+      </Link>
+    );
+  }
+
+  const initials = currentUser.name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+  const roleLabel = currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1);
+  const roleBadgeClass = getRoleColor(currentUser.role);
+
+  return (
+    <div className="space-y-2">
+      {/* Profile card */}
+      <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-orange-500 to-emerald-500 text-base font-black text-white">
+          {initials}
+        </div>
+        <div className="min-w-0">
+          <div className="text-sm font-bold text-white truncate">{currentUser.name}</div>
+          <div className="text-[10px] text-white/40 truncate">{currentUser.email}</div>
+          <span className={`mt-1 inline-block text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-full border ${roleBadgeClass}`}>{roleLabel}</span>
+        </div>
+      </div>
+      <button
+        onClick={() => { onClose(); navigate({ to: getRoleDashboard(currentUser.role) }); }}
+        className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 text-xs font-black uppercase tracking-widest text-white hover:bg-white/10 transition-all"
+      >
+        <LayoutDashboard className="h-4 w-4 text-orange-400" /> My Dashboard
+      </button>
+      <button
+        onClick={() => { logout(); onClose(); navigate({ to: "/" }); }}
+        className="flex w-full items-center gap-3 rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-3.5 text-xs font-black uppercase tracking-widest text-red-400 hover:bg-red-500/20 transition-all"
+      >
+        <LogOut className="h-4 w-4" /> Sign Out
+      </button>
+    </div>
   );
 }
 
@@ -103,15 +265,7 @@ export function Navbar() {
         </nav>
         
         <div className="hidden lg:flex items-center gap-4">
-          <Link
-            to="/login"
-            className="relative overflow-hidden inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#ff9b3f] via-[#ffba5a] to-[#10b981] px-6 py-2.5 text-[9.5px] font-black uppercase tracking-[0.2em] text-[#060b13] shadow-[0_0_15px_rgba(251,146,60,0.2)] hover:shadow-[0_0_22px_rgba(16,185,129,0.45)] hover:scale-[1.03] active:scale-95 transition-all duration-300 group"
-          >
-            <span className="absolute inset-0 w-full h-full bg-white/30 -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
-            <span className="relative z-10 flex items-center gap-1.5">
-              Login <ArrowRight className="h-3 w-3 stroke-[3px] group-hover:translate-x-1 transition-transform duration-300" />
-            </span>
-          </Link>
+          <NavAuthButton />
         </div>
         
         <button
@@ -148,16 +302,7 @@ export function Navbar() {
             ))}
             
             <div className="mt-4 border-t border-white/5 pt-6 pb-2">
-              <Link 
-                to="/login" 
-                onClick={() => setOpen(false)} 
-                className="relative overflow-hidden flex items-center justify-center rounded-full bg-gradient-to-r from-[#ff9b3f] via-[#ffba5a] to-[#10b981] w-full py-4 text-center text-xs font-black uppercase tracking-[0.2em] text-[#060b13] shadow-[0_0_25px_rgba(251,146,60,0.25)] group hover:scale-[1.02] active:scale-[0.98] transition-all"
-              >
-                <span className="absolute inset-0 w-full h-full bg-white/30 -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
-                <span className="relative z-10 flex items-center gap-2">
-                  Login <ArrowRight className="h-4 w-4 stroke-[3px]" />
-                </span>
-              </Link>
+              <MobileAuthSection onClose={() => setOpen(false)} />
             </div>
           </div>
         </div>
