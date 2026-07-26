@@ -1,4 +1,5 @@
-<img width="454" height="373" alt="OUR_LOGO-removebg-preview" src="https://github.com/user-attachments/assets/b67b0852-e63c-423b-9dbb-6b6e9a9ebbf2" />
+<img width="1164" height="980" alt="OUR LOGO" src="https://github.com/user-attachments/assets/cac8cc5c-9352-4eb0-a18b-b59c4ed8084f" />
+# [🌐 Live Website](https://it-placementx-platform.vercel.app/)
 
 # 🚀 ITPlacementX – India's AI-Powered Career Acceleration Platform
 
