@@ -10,12 +10,15 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import sys
+from token import NAME
 from decouple import config
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config("SECRET_KEY")
+AUTH_USER_MODEL = "accounts.User"
 
 
 # Quick-start development settings - unsuitable for production
@@ -24,24 +27,46 @@ SECRET_KEY = config("SECRET_KEY")
 # SECURITY WARNING: keep the secret key used in production secret!
 
 # SECURITY WARNING: don't run with debug turned on in production!
+from datetime import timedelta
 DEBUG = config("DEBUG", default=False, cast=bool)
 
 ALLOWED_HOSTS = config(
     "ALLOWED_HOSTS",
-    default="127.0.0.1,localhost"
+    default="127.0.0.1,localhost,testserver"
 ).split(",")
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+
+    "rest_framework",
+    "rest_framework_simplejwt.token_blacklist",
+    "apps.accounts",
 ]
+
+
+
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+}
+
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -76,16 +101,14 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": config("DB_NAME"),
-        "USER": config("DB_USER"),
-        "PASSWORD": config("DB_PASSWORD"),
-        "HOST": config("DB_HOST"),
-        "PORT": config("DB_PORT"),
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "test_db.sqlite3",
+        }
     }
-}
+
 
 
 # Password validation
@@ -126,3 +149,7 @@ STATIC_URL = 'static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
+
+EMAIL_BACKEND = (
+    "django.core.mail.backends.console.EmailBackend"
+)
