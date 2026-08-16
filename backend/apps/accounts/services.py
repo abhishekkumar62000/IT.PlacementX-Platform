@@ -6,7 +6,7 @@ from django.core.mail import send_mail
 from django.db import transaction
 from django.utils import timezone
 
-from .models import OTP, RegistrationSession, User
+from .models import OTP, RegistrationSession, User, UserRole
 
 
 # ============================================================
@@ -26,26 +26,14 @@ REGISTRATION_SESSION_MINUTES = 10
 # ============================================================
 
 def generate_otp():
-    """
-    Generate a cryptographically secure 6-digit OTP.
-    """
-
     return f"{secrets.randbelow(1_000_000):06d}"
 
 
 def hash_otp(code):
-    """
-    Hash OTP before storing it in the database.
-    """
-
     return make_password(code)
 
 
 def verify_otp_hash(code, code_hash):
-    """
-    Verify a plaintext OTP against its stored hash.
-    """
-
     return check_password(code, code_hash)
 
 
@@ -54,26 +42,14 @@ def verify_otp_hash(code, code_hash):
 # ============================================================
 
 def generate_registration_token():
-    """
-    Generate a cryptographically secure registration token.
-    """
-
     return secrets.token_urlsafe(48)
 
 
 def hash_registration_token(token):
-    """
-    Hash registration token before storing it.
-    """
-
     return make_password(token)
 
 
 def verify_registration_token(token, token_hash):
-    """
-    Verify a registration token against its stored hash.
-    """
-
     return check_password(token, token_hash)
 
 
@@ -82,10 +58,6 @@ def verify_registration_token(token, token_hash):
 # ============================================================
 
 def send_otp_email(email, code, purpose):
-    """
-    Send OTP verification email.
-    """
-
     send_mail(
         subject="Your ITPlacementX verification code",
         message=(
@@ -106,36 +78,18 @@ def send_otp_email(email, code, purpose):
 
 @transaction.atomic
 def create_otp(email, purpose="registration"):
-    """
-    Create and send a new OTP.
-
-    Used for the initial OTP request.
-    """
 
     email = email.strip().lower()
-
     now = timezone.now()
-
-    # --------------------------------------------------------
-    # Existing user check
-    # --------------------------------------------------------
 
     if User.objects.filter(email=email).exists():
         raise ValueError(
             "An account with this email already exists."
         )
 
-    # --------------------------------------------------------
-    # Generate OTP
-    # --------------------------------------------------------
-
     code = generate_otp()
 
-    # --------------------------------------------------------
-    # Create/update OTP
-    # --------------------------------------------------------
-
-    otp, created = OTP.objects.update_or_create(
+    otp, _ = OTP.objects.update_or_create(
         email=email,
         purpose=purpose,
         defaults={
@@ -154,17 +108,16 @@ def create_otp(email, purpose="registration"):
         },
     )
 
-    # --------------------------------------------------------
-    # Send email
-    # --------------------------------------------------------
-
     send_otp_email(
         email=email,
         code=code,
         purpose=purpose,
     )
 
-    return otp
+    # Return both the OTP object and the raw code so callers/tests
+    # can verify delivery and behaviour that depends on the raw
+    # OTP (tests expect a (otp, code) tuple).
+    return otp, code
 
 
 # ============================================================
@@ -173,21 +126,9 @@ def create_otp(email, purpose="registration"):
 
 @transaction.atomic
 def resend_otp(email, purpose="registration"):
-    """
-    Resend an OTP while respecting:
-
-    - 30 second cooldown
-    - maximum 3 resends
-    - 12 hour lockout
-    """
 
     email = email.strip().lower()
-
     now = timezone.now()
-
-    # --------------------------------------------------------
-    # Lock OTP row
-    # --------------------------------------------------------
 
     try:
         otp = (
@@ -204,43 +145,19 @@ def resend_otp(email, purpose="registration"):
             "No OTP request found. Please request an OTP first."
         )
 
-    # --------------------------------------------------------
-    # Existing user check
-    # --------------------------------------------------------
-
     if User.objects.filter(email=email).exists():
         raise ValueError(
             "An account with this email already exists."
         )
 
-    # --------------------------------------------------------
-    # Check account creation lockout
-    # --------------------------------------------------------
-
     if (
         otp.blocked_until
         and now < otp.blocked_until
     ):
-        remaining = (
-            otp.blocked_until - now
-        )
-
-        hours = max(
-            1,
-            int(
-                remaining.total_seconds()
-                // 3600
-            ),
-        )
-
         raise ValueError(
-            f"Account creation is temporarily blocked. "
-            f"Please try again later."
+            "Account creation is temporarily blocked. "
+            "Please try again later."
         )
-
-    # --------------------------------------------------------
-    # Check resend cooldown
-    # --------------------------------------------------------
 
     elapsed = (
         now - otp.last_sent_at
@@ -249,8 +166,7 @@ def resend_otp(email, purpose="registration"):
     if elapsed < OTP_RESEND_COOLDOWN_SECONDS:
 
         remaining = int(
-            OTP_RESEND_COOLDOWN_SECONDS
-            - elapsed
+            OTP_RESEND_COOLDOWN_SECONDS - elapsed
         )
 
         raise ValueError(
@@ -258,19 +174,10 @@ def resend_otp(email, purpose="registration"):
             "before requesting another OTP."
         )
 
-    # --------------------------------------------------------
-    # Check maximum resends
-    # --------------------------------------------------------
-
     if otp.resend_count >= MAX_RESENDS:
-
         raise ValueError(
             "Maximum OTP resend limit reached."
         )
-
-    # --------------------------------------------------------
-    # Generate new OTP
-    # --------------------------------------------------------
 
     code = generate_otp()
 
@@ -284,19 +191,11 @@ def resend_otp(email, purpose="registration"):
     )
 
     otp.last_sent_at = now
-
     otp.resend_count += 1
-
     otp.attempts = 0
-
     otp.is_used = False
 
-    # --------------------------------------------------------
-    # Lock account creation after 3rd resend
-    # --------------------------------------------------------
-
     if otp.resend_count >= MAX_RESENDS:
-
         otp.blocked_until = (
             now
             + timedelta(hours=12)
@@ -315,10 +214,6 @@ def resend_otp(email, purpose="registration"):
         ]
     )
 
-    # --------------------------------------------------------
-    # Send email
-    # --------------------------------------------------------
-
     send_otp_email(
         email=email,
         code=code,
@@ -332,49 +227,25 @@ def resend_otp(email, purpose="registration"):
 # VERIFY OTP
 # ============================================================
 
-@transaction.atomic
 def verify_otp(
     email,
     code,
     purpose="registration",
 ):
-    """
-    Verify OTP securely.
-
-    Maximum verification attempts:
-        5
-
-    OTP lifetime:
-        3 minutes
-    """
 
     email = email.strip().lower()
-
     now = timezone.now()
 
-    # --------------------------------------------------------
-    # Lock OTP row
-    # --------------------------------------------------------
-
     try:
-        otp = (
-            OTP.objects
-            .select_for_update()
-            .get(
-                email=email,
-                purpose=purpose,
-            )
+        otp = OTP.objects.get(
+            email=email,
+            purpose=purpose,
         )
 
     except OTP.DoesNotExist:
-
         raise ValueError(
             "Invalid OTP request."
         )
-
-    # --------------------------------------------------------
-    # Check lockout
-    # --------------------------------------------------------
 
     if (
         otp.blocked_until
@@ -384,52 +255,30 @@ def verify_otp(
             "Account creation is blocked for 12 hours."
         )
 
-    # --------------------------------------------------------
-    # Check already used
-    # --------------------------------------------------------
-
     if otp.is_used:
-
         raise ValueError(
             "This OTP has already been used."
         )
 
-    # --------------------------------------------------------
-    # Check expiry
-    # --------------------------------------------------------
-
     if otp.is_expired:
-
         raise ValueError(
             "This OTP has expired. "
             "Please request a new OTP."
         )
 
-    # --------------------------------------------------------
-    # Check maximum attempts
-    # --------------------------------------------------------
-
     if otp.attempts >= MAX_ATTEMPTS:
-
         raise ValueError(
             "Maximum OTP verification attempts reached."
         )
 
-    # --------------------------------------------------------
-    # Increment attempt
-    # --------------------------------------------------------
-
     otp.attempts += 1
-
-    # --------------------------------------------------------
-    # Verify OTP
-    # --------------------------------------------------------
 
     if not verify_otp_hash(
         code,
         otp.code_hash,
     ):
 
+        # Persist the incremented attempts count.
         otp.save(
             update_fields=[
                 "attempts",
@@ -438,8 +287,7 @@ def verify_otp(
         )
 
         remaining = (
-            MAX_ATTEMPTS
-            - otp.attempts
+            MAX_ATTEMPTS - otp.attempts
         )
 
         if remaining > 0:
@@ -448,13 +296,22 @@ def verify_otp(
                 f"{remaining} attempts remaining."
             )
 
+        # If we've exhausted attempts, lock the account creation for 12 hours.
+        otp.blocked_until = (
+            now + timedelta(hours=12)
+        )
+
+        otp.save(
+            update_fields=[
+                "attempts",
+                "updated_at",
+                "blocked_until",
+            ]
+        )
+
         raise ValueError(
             "Maximum OTP verification attempts reached."
         )
-
-    # --------------------------------------------------------
-    # OTP successfully verified
-    # --------------------------------------------------------
 
     otp.is_used = True
 
@@ -474,52 +331,22 @@ def verify_otp(
 # ============================================================
 
 @transaction.atomic
-def create_registration_session(
-    email,
-    role,
-):
-    """
-    Create a temporary registration session after
-    successful OTP verification.
-
-    The actual User account is NOT created here.
-    """
+def create_registration_session(email):
 
     email = email.strip().lower()
 
-    # --------------------------------------------------------
-    # Prevent existing account
-    # --------------------------------------------------------
-
-    if User.objects.filter(
-        email=email
-    ).exists():
-
+    if User.objects.filter(email=email).exists():
         raise ValueError(
             "An account with this email already exists."
         )
-
-    # --------------------------------------------------------
-    # Generate raw token
-    # --------------------------------------------------------
 
     registration_token = (
         generate_registration_token()
     )
 
-    # --------------------------------------------------------
-    # Store hashed token
-    # --------------------------------------------------------
-
-    token_hash = (
-        hash_registration_token(
-            registration_token
-        )
+    token_hash = hash_registration_token(
+        registration_token
     )
-
-    # --------------------------------------------------------
-    # Session expiry
-    # --------------------------------------------------------
 
     expires_at = (
         timezone.now()
@@ -528,10 +355,6 @@ def create_registration_session(
         )
     )
 
-    # --------------------------------------------------------
-    # Invalidate previous unused sessions
-    # --------------------------------------------------------
-
     RegistrationSession.objects.filter(
         email=email,
         is_used=False,
@@ -539,13 +362,8 @@ def create_registration_session(
         is_used=True,
     )
 
-    # --------------------------------------------------------
-    # Create new session
-    # --------------------------------------------------------
-
     session = RegistrationSession.objects.create(
         email=email,
-        role=role,
         token_hash=token_hash,
         expires_at=expires_at,
         is_used=False,
@@ -564,14 +382,6 @@ def complete_registration(
     password,
     registration_token,
 ):
-    """
-    Complete account creation using a verified
-    registration session.
-    """
-
-    # --------------------------------------------------------
-    # Find possible active sessions
-    # --------------------------------------------------------
 
     sessions = (
         RegistrationSession.objects
@@ -583,10 +393,6 @@ def complete_registration(
     )
 
     session = None
-
-    # --------------------------------------------------------
-    # Verify token
-    # --------------------------------------------------------
 
     for candidate in sessions:
 
@@ -601,84 +407,91 @@ def complete_registration(
             break
 
     if session is None:
-
         raise ValueError(
             "Invalid or expired registration token."
         )
 
-    # --------------------------------------------------------
-    # Check expiry again after locking
-    # --------------------------------------------------------
-
     if session.is_expired:
-
         raise ValueError(
             "Registration session has expired."
         )
 
-    # --------------------------------------------------------
-    # Check token reuse
-    # --------------------------------------------------------
-
     if session.is_used:
-
         raise ValueError(
             "This registration token has already been used."
         )
 
-    # --------------------------------------------------------
-    # Extract trusted registration data
-    # --------------------------------------------------------
-
     email = session.email
-    role = session.role
 
-    # --------------------------------------------------------
-    # Check email uniqueness
-    # --------------------------------------------------------
-
-    if User.objects.filter(
-        email=email
-    ).exists():
-
+    if User.objects.filter(email=email).exists():
         raise ValueError(
             "An account with this email already exists."
         )
 
-    # --------------------------------------------------------
-    # Check username uniqueness
-    # --------------------------------------------------------
-
-    if User.objects.filter(
-        username=username
-    ).exists():
-
+    if User.objects.filter(username=username).exists():
         raise ValueError(
             "This username is already taken."
         )
 
-    # --------------------------------------------------------
-    # Create user
-    # --------------------------------------------------------
-
+    # Role is intentionally NOT assigned here.
     user = User.objects.create_user(
         email=email,
         username=username,
         password=password,
-        role=role,
+        role=None,
         is_active=True,
         is_verified=True,
     )
-
-    # --------------------------------------------------------
-    # Consume registration token
-    # --------------------------------------------------------
 
     session.is_used = True
 
     session.save(
         update_fields=[
             "is_used",
+            "updated_at",
+        ]
+    )
+
+    return user
+
+
+# ============================================================
+# ASSIGN USER ROLE
+# ============================================================
+
+@transaction.atomic
+def assign_user_role(user, role):
+
+    if role == UserRole.ADMIN:
+        raise ValueError(
+            "Admin role cannot be selected by users."
+        )
+
+    user = (
+        User.objects
+        .select_for_update()
+        .get(pk=user.pk)
+    )
+
+    if user.role is not None:
+        raise ValueError(
+            "Role has already been selected."
+        )
+
+    if role not in (
+        UserRole.TRAINEE,
+        UserRole.TRAINER,
+        UserRole.COMPANY,
+    ):
+        raise ValueError(
+            "Invalid role."
+        )
+
+    user.role = role
+
+    user.save(
+        update_fields=[
+            "role",
             "updated_at",
         ]
     )

@@ -1,18 +1,25 @@
 from django.urls import path
 
 from .views import (
-    LoginView,
-    LogoutView,
-    MeView,
-    ResendOTPView,
     SendOTPView,
-    SignupView,
     VerifyOTPView,
+    ResendOTPView,
+    SignupView,
+    LoginView,
+    MeView,
+    RoleSelectionView,
+    LogoutView,
 )
+
 from rest_framework_simplejwt.views import TokenRefreshView
 
 
 urlpatterns = [
+
+    # =========================
+    # Registration / OTP
+    # =========================
+
     path(
         "otp/send/",
         SendOTPView.as_view(),
@@ -37,16 +44,16 @@ urlpatterns = [
         name="signup",
     ),
 
+    # =========================
+    # JWT Authentication
+    # =========================
+
     path(
         "login/",
         LoginView.as_view(),
         name="login",
     ),
-    path(
-        "me/",
-        MeView.as_view(),
-        name="me",
-    ),
+
     path(
         "token/refresh/",
         TokenRefreshView.as_view(),
@@ -54,8 +61,19 @@ urlpatterns = [
     ),
 
     path(
-    "logout/", 
-    LogoutView.as_view(), 
-    name="logout"
+        "me/",
+        MeView.as_view(),
+        name="me",
+    ),
+    path(
+        "role/selection/",
+        RoleSelectionView.as_view(),
+        name="role-selection",
+    ),
+
+    path(
+        "logout/",
+        LogoutView.as_view(),
+        name="logout",
     ),
 ]

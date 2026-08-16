@@ -1,8 +1,11 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User, UserRole
 from .services import (
+    assign_user_role,
     complete_registration,
     create_otp,
     create_registration_session,
@@ -19,30 +22,14 @@ class SendOTPSerializer(serializers.Serializer):
 
     email = serializers.EmailField()
 
-    role = serializers.ChoiceField(
-        choices=UserRole.choices
-    )
-
     def validate_email(self, value):
         return value.strip().lower()
-
-    def validate_role(self, value):
-
-        if value == UserRole.ADMIN:
-            raise serializers.ValidationError(
-                "Admin accounts cannot be self-created."
-            )
-
-        return value
 
     def validate(self, attrs):
 
         email = attrs["email"]
 
-        if User.objects.filter(
-            email=email
-        ).exists():
-
+        if User.objects.filter(email=email).exists():
             raise serializers.ValidationError(
                 {
                     "email": (
@@ -59,7 +46,6 @@ class SendOTPSerializer(serializers.Serializer):
             )
 
         except ValueError as error:
-
             raise serializers.ValidationError(
                 {
                     "email": str(error)
@@ -86,21 +72,8 @@ class VerifyOTPSerializer(serializers.Serializer):
         },
     )
 
-    role = serializers.ChoiceField(
-        choices=UserRole.choices
-    )
-
     def validate_email(self, value):
         return value.strip().lower()
-
-    def validate_role(self, value):
-
-        if value == UserRole.ADMIN:
-            raise serializers.ValidationError(
-                "Admin accounts cannot be self-created."
-            )
-
-        return value
 
     def validate(self, attrs):
 
@@ -116,12 +89,10 @@ class VerifyOTPSerializer(serializers.Serializer):
             _, registration_token = (
                 create_registration_session(
                     email=email,
-                    role=attrs["role"],
                 )
             )
 
         except ValueError as error:
-
             raise serializers.ValidationError(
                 {
                     "code": str(error)
@@ -152,7 +123,6 @@ class ResendOTPSerializer(serializers.Serializer):
             )
 
         except ValueError as error:
-
             raise serializers.ValidationError(
                 {
                     "email": str(error)
@@ -163,12 +133,10 @@ class ResendOTPSerializer(serializers.Serializer):
 
 
 # ============================================================
-# COMPLETE REGISTRATION
+# SIGNUP
 # ============================================================
 
-class SignupSerializer(
-    serializers.ModelSerializer
-):
+class SignupSerializer(serializers.ModelSerializer):
 
     password = serializers.CharField(
         write_only=True,
@@ -207,7 +175,6 @@ class SignupSerializer(
         if User.objects.filter(
             username=value
         ).exists():
-
             raise serializers.ValidationError(
                 "This username is already taken."
             )
@@ -247,7 +214,6 @@ class SignupSerializer(
         )
 
         try:
-
             user = complete_registration(
                 username=validated_data["username"],
                 password=password,
@@ -255,7 +221,6 @@ class SignupSerializer(
             )
 
         except ValueError as error:
-
             raise serializers.ValidationError(
                 {
                     "registration_token": str(error)
@@ -269,20 +234,17 @@ class SignupSerializer(
 # LOGIN
 # ============================================================
 
-from django.contrib.auth import authenticate
-from rest_framework import serializers
-from rest_framework_simplejwt.exceptions import TokenError
-from rest_framework_simplejwt.tokens import RefreshToken
-
-from .models import User
-
-
 class LoginSerializer(serializers.Serializer):
+
     email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
+
+    password = serializers.CharField(
+        write_only=True
+    )
 
     def validate(self, attrs):
-        email = attrs["email"]
+
+        email = attrs["email"].strip().lower()
         password = attrs["password"]
 
         user = authenticate(
@@ -305,28 +267,71 @@ class LoginSerializer(serializers.Serializer):
 
         return {
             "user": user,
-            "access": str(refresh.access_token),
+            "access": str(
+                refresh.access_token
+            ),
             "refresh": str(refresh),
         }
 
 
+# ============================================================
+# ROLE SELECTION
+# ============================================================
 
-from rest_framework_simplejwt.tokens import RefreshToken
+class RoleSelectionSerializer(serializers.Serializer):
+
+    role = serializers.ChoiceField(
+        choices=[
+            (
+                UserRole.TRAINEE,
+                UserRole.TRAINEE.label,
+            ),
+            (
+                UserRole.TRAINER,
+                UserRole.TRAINER.label,
+            ),
+            (
+                UserRole.COMPANY,
+                UserRole.COMPANY.label,
+            ),
+        ]
+    )
+
+    def save(self, **kwargs):
+
+        user = self.context["request"].user
+
+        try:
+            return assign_user_role(
+                user=user,
+                role=self.validated_data["role"],
+            )
+
+        except ValueError as error:
+            raise serializers.ValidationError(
+                {
+                    "role": str(error)
+                }
+            ) from error
 
 
-from rest_framework import serializers
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.exceptions import TokenError
-
+# ============================================================
+# LOGOUT
+# ============================================================
 
 class LogoutSerializer(serializers.Serializer):
+
     refresh = serializers.CharField()
 
     def save(self, **kwargs):
+
         try:
-            token = RefreshToken(self.validated_data["refresh"])
+            token = RefreshToken(
+                self.validated_data["refresh"]
+            )
+
             token.blacklist()
+
         except TokenError:
-            # Token is already invalid/blacklisted.
             # Logout remains idempotent.
             pass

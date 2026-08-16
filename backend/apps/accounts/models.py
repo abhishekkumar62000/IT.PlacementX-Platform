@@ -41,8 +41,8 @@ class UserManager(BaseUserManager):
         if not password:
             raise ValueError("Password is required.")
 
-        if not role:
-            raise ValueError("Role is required.")
+        if role is not None and role not in UserRole.values:
+            raise ValueError("Invalid role.")
 
         email = self.normalize_email(email).strip().lower()
         username = username.strip()
@@ -72,10 +72,14 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_verified", True)
 
         if extra_fields.get("is_staff") is not True:
-            raise ValueError("Superuser must have is_staff=True.")
+            raise ValueError(
+                "Superuser must have is_staff=True."
+            )
 
         if extra_fields.get("is_superuser") is not True:
-            raise ValueError("Superuser must have is_superuser=True.")
+            raise ValueError(
+                "Superuser must have is_superuser=True."
+            )
 
         return self.create_user(
             email=email,
@@ -109,6 +113,8 @@ class User(
     role = models.CharField(
         max_length=20,
         choices=UserRole.choices,
+        null=True,
+        blank=True,
     )
 
     is_active = models.BooleanField(
@@ -138,7 +144,7 @@ class User(
     REQUIRED_FIELDS = ["username"]
 
     def __str__(self):
-        return f"{self.username} ({self.role})"
+        return f"{self.username} ({self.role or 'no-role'})"
 
 
 # ============================================================
@@ -235,11 +241,6 @@ class RegistrationSession(models.Model):
 
     email = models.EmailField(
         db_index=True,
-    )
-
-    role = models.CharField(
-        max_length=20,
-        choices=UserRole.choices,
     )
 
     token_hash = models.CharField(
